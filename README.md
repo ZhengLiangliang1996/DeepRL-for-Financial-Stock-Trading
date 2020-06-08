@@ -41,7 +41,5 @@ python picklefile_draw_helper.py
 3. DDPG(Linear for actor and critic)
 4. DDPG(LSTM for actor and critic)
 
-The stock environment is partly inspired by [wbbhcb]:()
-
-This is an [wbbhcb](https://github.com/wbbhcb/stock_market/blob/master/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%E5%AE%9E%E6%88%98/2020_02_09_pytorch/stock_env.py "With a Title"). 
+The stock environment is partly inspired by [wbbhcb](https://github.com/wbbhcb/stock_market/blob/master/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0%E5%AE%9E%E6%88%98/2020_02_09_pytorch/stock_env.py "With a Title"). 
 

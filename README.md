@@ -33,6 +33,11 @@ In the result draw folder you could draw the result pickle files by
 ```
 python picklefile_draw_helper.py
 ```
+I used vsc_stimu3_brnn.pbs file for running in VUB VSC, if anyone wants to run it in a super computer center, feel free to use that, the code is almost the same. simply run by
+
+```
+qsub vsc_stimu3_brnn.pbs
+```
 
 ## Implementation Details and NN Architecture
 0. MACD

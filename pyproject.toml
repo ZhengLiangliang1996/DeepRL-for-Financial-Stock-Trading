@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "deeprl-for-financial-stock-trading"
+version = "0.1.0"
+description = "deeprl-for-financial-stock-trading"
+authors = ["Liangliang <38830504+ZhengLiangliang1996@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+torch = "2.0.0"
+matplotlib = "3.7.1"
+gym = "^0.26.2"
+pandas = "^1.5.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

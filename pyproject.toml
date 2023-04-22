@@ -12,6 +12,9 @@ torch = "2.0.0"
 matplotlib = "3.7.1"
 gym = "^0.26.2"
 pandas = "^1.5.3"
+alpaca-trade-api = "^3.0.0"
+exchange-calendars = "^4.2.6"
+stockstats = "^0.5.2"
 
 
 [build-system]

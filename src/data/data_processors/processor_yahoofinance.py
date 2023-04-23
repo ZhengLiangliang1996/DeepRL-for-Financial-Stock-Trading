@@ -58,6 +58,22 @@ class YahooFinanceProcessor:
     def convert_interval(self, time_interval: str) -> str:
         # Convert FinRL 'standardised' time periods to Yahoo format: 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo
         if time_interval in [
+            '1m', 
+            '2m', 
+            '5m', 
+            '15m', 
+            '30m', 
+            '60m', 
+            '90m', 
+            '1h', 
+            '1d', 
+            '5d', 
+            '1wk', 
+            '1mo', 
+            '3mo'
+        ]:
+            return time_interval
+        elif time_interval in [
             "1Min",
             "2Min",
             "5Min",
@@ -126,102 +142,32 @@ class YahooFinanceProcessor:
 
         return data_df
 
-    def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        tic_list = np.unique(df.tic.values)
-        NY = "America/New_York"
+    def clean_data(self, data):
+        """
+        clean the raw data
+        deal with missing values
+        reasons: stocks could be delisted, not incorporated at the time step
+        :param data: (df) pandas dataframe
+        :return: (df) pandas dataframe
+        """
+        df = data.copy()
+        df = df.sort_values(["timestamp", "tic"], ignore_index=True)
+        df.index = df.timestamp.factorize()[0]
+        merged_closes = df.pivot_table(index="timestamp", columns="tic", values="close")
+        merged_closes = merged_closes.dropna(axis=1)
+        tics = merged_closes.columns
+        df = df[df.tic.isin(tics)]
+        # df = data.copy()
+        # list_ticker = df["tic"].unique().tolist()
+        # only apply to daily level data, need to fix for minute level
+        # list_date = list(pd.date_range(df['date'].min(),df['date'].max()).astype(str))
+        # combination = list(itertools.product(list_date,list_ticker))
 
-        trading_days = self.get_trading_days(start=self.start, end=self.end)
-        # produce full timestamp index
-        if self.time_interval == "1d":
-            times = trading_days
-        elif self.time_interval == "1m":
-            times = []
-            for day in trading_days:
-                #                NY = "America/New_York"
-                current_time = pd.Timestamp(day + " 09:30:00").tz_localize(NY)
-                for i in range(390):  # 390 minutes in trading day
-                    times.append(current_time)
-                    current_time += pd.Timedelta(minutes=1)
-        else:
-            raise ValueError(
-                "Data clean at given time interval is not supported for YahooFinance data."
-            )
-
-        # create a new dataframe with full timestamp series
-        new_df = pd.DataFrame()
-        for tic in tic_list:
-            tmp_df = pd.DataFrame(
-                columns=["open", "high", "low", "close", "volume"], index=times
-            )
-            tic_df = df[
-                df.tic == tic
-            ]  # extract just the rows from downloaded data relating to this tic
-            for i in range(tic_df.shape[0]):  # fill empty DataFrame using original data
-                tmp_df.loc[tic_df.iloc[i]["timestamp"].tz_localize(NY)] = tic_df.iloc[
-                    i
-                ][["open", "high", "low", "close", "volume"]]
-            # print("(9) tmp_df\n", tmp_df.to_string()) # print ALL dataframe to check for missing rows from download
-
-            # if close on start date is NaN, fill data with first valid close
-            # and set volume to 0.
-            if str(tmp_df.iloc[0]["close"]) == "nan":
-                print("NaN data on start date, fill using first valid data.")
-                for i in range(tmp_df.shape[0]):
-                    if str(tmp_df.iloc[i]["close"]) != "nan":
-                        first_valid_close = tmp_df.iloc[i]["close"]
-                        tmp_df.iloc[0] = [
-                            first_valid_close,
-                            first_valid_close,
-                            first_valid_close,
-                            first_valid_close,
-                            0.0,
-                        ]
-                        break
-
-            # if the close price of the first row is still NaN (All the prices are NaN in this case)
-            if str(tmp_df.iloc[0]["close"]) == "nan":
-                print(
-                    "Missing data for ticker: ",
-                    tic,
-                    " . The prices are all NaN. Fill with 0.",
-                )
-                tmp_df.iloc[0] = [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                ]
-
-            # fill NaN data with previous close and set volume to 0.
-            for i in range(tmp_df.shape[0]):
-                if str(tmp_df.iloc[i]["close"]) == "nan":
-                    previous_close = tmp_df.iloc[i - 1]["close"]
-                    if str(previous_close) == "nan":
-                        raise ValueError
-                    tmp_df.iloc[i] = [
-                        previous_close,
-                        previous_close,
-                        previous_close,
-                        previous_close,
-                        0.0,
-                    ]
-                    # print(tmp_df.iloc[i], " Filled NaN data with previous close and set volume to 0. ticker: ", tic)
-
-            # merge single ticker data to new DataFrame
-            tmp_df = tmp_df.astype(float)
-            tmp_df["tic"] = tic
-            new_df = pd.concat([new_df, tmp_df])
-
-        #            print(("Data clean for ") + tic + (" is finished."))
-
-        # reset index and rename columns
-        new_df = new_df.reset_index()
-        new_df = new_df.rename(columns={"index": "timestamp"})
-
-        #        print("Data clean all finished!")
-
-        return new_df
+        # df_full = pd.DataFrame(combination,columns=["date","tic"]).merge(df,on=["date","tic"],how="left")
+        # df_full = df_full[df_full['date'].isin(df['date'])]
+        # df_full = df_full.sort_values(['date','tic'])
+        # df_full = df_full.fillna(0)
+        return df
 
     def add_technical_indicator(
         self, data: pd.DataFrame, tech_indicator_list: list[str]
@@ -252,6 +198,7 @@ class YahooFinanceProcessor:
                     )
                 except Exception as e:
                     print(e)
+
             df = df.merge(
                 indicator_df[["tic", "timestamp", indicator]],
                 on=["tic", "timestamp"],
@@ -266,6 +213,7 @@ class YahooFinanceProcessor:
         :param data: (df) pandas dataframe
         :return: (df) pandas dataframe
         """
+        print(self.time_interval)
         vix_df = self.download_data(["VIXY"], self.start, self.end, self.time_interval)
         cleaned_vix = self.clean_data(vix_df)
         print("cleaned_vix\n", cleaned_vix)
@@ -370,10 +318,18 @@ class YahooFinanceProcessor:
         return price_array, tech_array, turbulence_array
 
     def get_trading_days(self, start: str, end: str) -> list[str]:
+        from datetime import datetime
         nyse = tc.get_calendar("NYSE")
-        df = nyse.sessions_in_range(
-            pd.Timestamp(start, tz=pytz.UTC), pd.Timestamp(end, tz=pytz.UTC)
-        )
+        date_format = "%Y-%m-%d"  # Replace this with the format of your date string
+
+        # Convert the date string to a datetime object
+        start = datetime.strptime(start, date_format)
+        end = datetime.strptime(end, date_format)
+
+        start = start.date()
+        end = end.date()
+        df = nyse.sessions_in_range(start, end)
+        
         trading_days = []
         for day in df:
             trading_days.append(str(day)[:10])

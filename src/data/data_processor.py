@@ -74,3 +74,26 @@ class DataProcessor:
         tech_array[tech_inf_positions] = 0
 
         return price_array, tech_array, turbulence_array
+    
+    def preprocess_data(self, df, technical_list):
+        """main method to do the feature engineering
+        @:param config: source dataframe
+        @:return: a DataMatrices object
+        """
+        # clean data
+        df = self.clean_data(df)
+        print('Successfully cleaned data ')
+
+        df = self.add_technical_indicator(df, technical_list)
+        print("Successfully added technical indicators")
+
+        df = self.add_vix(df)
+        print("Successfully added vix")
+
+        # add turbulence index for multiple stock
+        #df = self.add_turbulence(df)
+        #print("Successfully added turbulence index")
+
+        # fill the missing values at the beginning and the end
+        df = df.fillna(method="ffill").fillna(method="bfill")
+        return df
